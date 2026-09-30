@@ -1,0 +1,12 @@
+   # IDE
+   .idea/
+   .gradle/
+   build/
+
+   # Android
+   *.iml
+   local.properties
+   .DS_Store
+
+   # Logs
+   *.log

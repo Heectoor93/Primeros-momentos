@@ -1,31 +1,5 @@
 package com.example.ui
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import com.example.data.BabyProfile
-import com.example.ui.theme.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.animateContentSize
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.Image
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import android.net.Uri
 import android.app.DatePickerDialog
@@ -45,16 +19,43 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import com.example.data.BabyProfile
+import com.example.ui.theme.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.BorderStroke
 import com.example.data.MomentRecord
 import com.example.ui.BabyViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.foundation.BorderStroke
 
 @Composable
 fun MomentsScreen(
@@ -426,134 +427,132 @@ fun MomentsScreen(
                                         expandedRange.value = if (isExpanded) "" else range
                                     }
                                     .padding(16.dp),
-                                {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        val icon = when (range) {
-                                            "0-6 meses" -> Icons.Default.ChildCare
-                                            "6-12 meses" -> Icons.Default.DirectionsRun
-                                            "12-18 meses" -> Icons.Default.NaturePeople
-                                            else -> Icons.Default.AutoAwesome
-                                        }
-                                        val iconColor = when (range) {
-                                            "0-6 meses" -> MintPrimary
-                                            "6-12 meses" -> SkyBlue
-                                            "12-18 meses" -> LavenderSoft
-                                            else -> GoldenMilestone
-                                        }
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val icon = when (range) {
+                                    "0-6 meses" -> Icons.Default.ChildCare
+                                    "6-12 meses" -> Icons.Default.DirectionsRun
+                                    "12-18 meses" -> Icons.Default.NaturePeople
+                                    else -> Icons.Default.AutoAwesome
+                                }
+                                val iconColor = when (range) {
+                                    "0-6 meses" -> MintPrimary
+                                    "6-12 meses" -> SkyBlue
+                                    "12-18 meses" -> LavenderSoft
+                                    else -> GoldenMilestone
+                                }
 
-                                        Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                            .background(iconColor.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(imageVector = icon, contentDescription = null, tint = iconColor)
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(iconColor.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(imageVector = icon, contentDescription = null, tint = iconColor)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
 
-                                        Column {
-                                            Text(text = range, style = Typography.headlineSmall, color = TextDark)
-                                            Text(
-                                                text = "$completed/$total momentos completados",
-                                                style = Typography.labelSmall,
-                                                color = TextMuted
-                                            )
-                                        }
-                                    }
-
-                                    Icon(
-                                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = null,
-                                        tint = TextMuted
+                                Column {
+                                    Text(text = range, style = Typography.headlineSmall, color = TextDark)
+                                    Text(
+                                        text = "$completed/$total momentos completados",
+                                        style = Typography.labelSmall,
+                                        color = TextMuted
                                     )
                                 }
-                            }
-                            if (isExpanded) {
-                                Divider(color = CreamBg, thickness = 1.dp)
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    if (filtered.isEmpty()) {
-                                        Text(
-                                            text = "Aún no hay momentos definidos para esta etapa.",
-                                            style = Typography.bodyMedium,
-                                            color = TextMuted,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.padding(16.dp)
-                                        )
-                                    }
 
-                                    filtered.forEach { moment ->
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                Icon(
+                                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = null,
+                                    tint = TextMuted
+                                )
+                            }
+                            HorizontalDivider(color = CreamBg, thickness = 1.dp)
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                if (filtered.isEmpty()) {
+                                    Text(
+                                        text = "Aún no hay momentos definidos para esta etapa.",
+                                        style = Typography.bodyMedium,
+                                        color = TextMuted,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
+
+                                filtered.forEach { moment ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { showEditMomentDetail = moment }
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable { showEditMomentDetail = moment }
-                                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.weight(1f)
                                         ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Text(
+                                            Text(
                                                 text = moment.name,
                                                 style = if (moment.isCompleted) Typography.bodyLarge else Typography.bodyMedium,
                                                 color = if (moment.isCompleted) TextDark else TextMuted,
                                                 fontWeight = if (moment.isCompleted) FontWeight.SemiBold else FontWeight.Normal
+                                            )
+                                            if (moment.isCustom) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = "Personalizado",
+                                                    style = Typography.labelSmall,
+                                                    color = MintPrimary,
+                                                    fontWeight = FontWeight.Bold
                                                 )
-                                                if (moment.isCustom) {
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    Text(
-                                                        text = "Personalizado",
-                                                        style = Typography.labelSmall,
-                                                        color = MintPrimary,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
-                                                }
+                                            }
+                                        }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            IconButton(
+                                                onClick = {
+                                                    showEditMomentDetail = moment
+                                                    autoOpenMediaSelector = true
+                                                },
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.CameraAlt,
+                                                    contentDescription = "Añadir foto o vídeo",
+                                                    tint = if (!moment.photoPath.isNullOrBlank()) MintPrimary else TextMuted.copy(alpha = 0.6f),
+                                                    modifier = Modifier.size(22.dp)
+                                                )
                                             }
 
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            IconButton(
+                                                onClick = {
+                                                    viewModel.toggleMomentStatus(moment)
+                                                },
+                                                modifier = Modifier.size(36.dp)
                                             ) {
-                                                IconButton(
-                                                    onClick = {
-                                                        showEditMomentDetail = moment
-                                                        autoOpenMediaSelector = true
-                                                    },
-                                                    modifier = Modifier.size(36.dp)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.CameraAlt,
-                                                        contentDescription = "Añadir foto o vídeo",
-                                                        tint = if (!moment.photoPath.isNullOrBlank()) MintPrimary else TextMuted.copy(alpha = 0.6f),
-                                                        modifier = Modifier.size(22.dp)
-                                                    )
-                                                }
-
-                                                IconButton(
-                                                    onClick = {
-                                                        viewModel.toggleMomentStatus(moment)
-                                                    },
-                                                    modifier = Modifier.size(36.dp)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = if (moment.isCompleted) {
+                                                Icon(
+                                                    imageVector = if (moment.isCompleted) {
                                                         if (moment.isCustom) Icons.Default.Favorite else Icons.Default.CheckCircle
                                                         } else {
                                                         Icons.Default.RadioButtonUnchecked
                                                         },
-                                                        contentDescription = if (moment.isCompleted) "Desmarcar momento" else "Marcar momento",
-                                                        tint = if (moment.isCompleted) {
+                                                    contentDescription = if (moment.isCompleted) "Desmarcar momento" else "Marcar momento",
+                                                    tint = if (moment.isCompleted) {
                                                         if (moment.isCustom) PrimaryDark else MintPrimary
                                                         } else TextMuted.copy(alpha = 0.5f),
-                                                        modifier = Modifier.size(24.dp)
-                                                    )
-                                                }
+                                                    modifier = Modifier.size(24.dp)
+                                                )
                                             }
                                         }
-                                        Divider(color = CreamBg.copy(alpha = 0.5f), thickness = 1.dp)
                                     }
+                                    HorizontalDivider(color = CreamBg.copy(alpha = 0.5f), thickness = 1.dp)
                                 }
                             }
                         }
@@ -561,5 +560,118 @@ fun MomentsScreen(
                 }
             }
         }
+
+        // Floating Action Button (FAB) to add custom moments
+        FloatingActionButton(
+            onClick = { showAddMomentDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 24.dp, end = 24.dp),
+            containerColor = PrimaryDark,
+            contentColor = SurfaceWhite
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir Momento Personalizado")
+        }
+    }
+
+    // Custom moments creator dialog
+    if (showAddMomentDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddMomentDialog = false },
+            title = { Text("Añadir Momento Customizado", style = Typography.headlineMedium, color = PrimaryDark) },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    Text("Personaliza recuerdos y momentos hermosos junto a tu bebé. (No cuentan para objetivos oficiales de edad).", style = Typography.labelSmall, color = TextMuted)
+
+                    PMOutlinedTextField(
+                        value = customName,
+                        onValueChange = { customName = it },
+                        label = { Text("Nombre del momento") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Age range selection
+                    Text("Rango de edad:", style = Typography.labelLarge)
+                    var expandedRange by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = { expandedRange = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(customAgeRange, color = TextDark)
+                        }
+                        DropdownMenu(
+                            expanded = expandedRange,
+                            onDismissRequest = { expandedRange = false }
+                        ) {
+                            listOf("0-6 meses", "6-12 meses", "12-18 meses", "18-24 meses").forEach { selectRange ->
+                                DropdownMenuItem(
+                                    text = { Text(selectRange) },
+                                    onClick = {
+                                        customAgeRange = selectRange
+                                        expandedRange = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    PMOutlinedTextField(
+                        value = customDate,
+                        onValueChange = { customDate = it },
+                        label = { Text("¿Cuándo paso? (Ej. 15/05/2024)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    PMOutlinedTextField(
+                        value = customLocation,
+                        onValueChange = { customLocation = it },
+                        label = { Text("¿Dónde fue? (Ej. Baño principal)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    PMOutlinedTextField(
+                        value = customDetails,
+                        onValueChange = { customDetails = it },
+                        label = { Text("Detalles del momento") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(110.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (customName.isNotBlank()) {
+                            viewModel.addCustomMoment(
+                                name = customName,
+                                ageRange = customAgeRange,
+                                dateHappened = customDate,
+                                location = customLocation,
+                                details = customDetails,
+                                photoPath = "mock_photo_drive"
+                            )
+                            customName = ""
+                            customDate = ""
+                            customLocation = ""
+                            customDetails = ""
+                            showAddMomentDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
+                ) {
+                    Text("Guardar Momento")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddMomentDialog = false }) {
+                    Text("Cancelar", color = TextMuted)
+                }
+            }
+        )
     }
 }

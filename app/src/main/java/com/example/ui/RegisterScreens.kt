@@ -24,12 +24,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.data.ActivityRecord
 import com.example.data.BabyProfile
 import com.example.data.HealthRecord
 import com.example.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 
 @Composable
 fun RegisterScreen(
@@ -64,6 +71,7 @@ fun RegisterScreen(
                     sizeDp = 44,
                     skinTone = baby.skinTone,
                     hairColor = baby.hairColor,
+                    completedPercentage = 0f,
                     preferredColor = baby.preferredPacifierColor,
                     useProfileImage = true
                 )
@@ -166,27 +174,27 @@ fun ActividadTabContent(viewModel: BabyViewModel, baby: BabyProfile) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            BentoChip(
-                modifier = Modifier.weight(1f),
-                label = "Comida",
-                icon = Icons.Default.Restaurant,
-                selected = selectedActivityType == "comida",
-                onClick = { selectedActivityType = "comida" }
-            )
-            BentoChip(
-                modifier = Modifier.weight(1f),
-                label = "Sueño",
-                icon = Icons.Default.Bedtime,
-                selected = selectedActivityType == "sueno",
-                onClick = { selectedActivityType = "sueno" }
-            )
-            BentoChip(
-                modifier = Modifier.weight(1f),
-                label = "Pañal",
-                icon = Icons.Default.ChildCare,
-                selected = selectedActivityType == "panal",
-                onClick = { selectedActivityType = "panal" }
-            )
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                BentoChip(
+                    label = "Comida",
+                    selected = selectedActivityType == "comida",
+                    onClick = { selectedActivityType = "comida" }
+                )
+            }
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                BentoChip(
+                    label = "Sueño",
+                    selected = selectedActivityType == "sueno",
+                    onClick = { selectedActivityType = "sueno" }
+                )
+            }
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                BentoChip(
+                    label = "Pañal",
+                    selected = selectedActivityType == "panal",
+                    onClick = { selectedActivityType = "panal" }
+                )
+            }
         }
 
         if (selectedActivityType == "sueno") {
@@ -259,6 +267,7 @@ fun ActividadTabContent(viewModel: BabyViewModel, baby: BabyProfile) {
                     SleepManualRegistrationForm(
                         baby = baby,
                         activityDateStr = activityDate,
+                        onDateChange = { activityDate = it },
                         startTime = sleepStartTime,
                         onStartTimeChange = { sleepStartTime = it },
                         endTime = sleepEndTime,
@@ -622,29 +631,19 @@ fun SaludTabContent(viewModel: BabyViewModel) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = statusIcon,
-                                                contentDescription = null,
-                                                tint = if (isSelected) statusColor else TextMuted,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Text(
-                                                text = statusTitle,
-                                                style = Typography.bodyMedium,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) PrimaryDark else TextDark
-                                            )
-                                        }
-                                        RadioButton(
-                                            selected = isSelected,
-                                            onClick = { vaccineStatus = statusTitle },
-                                            colors = RadioButtonDefaults.colors(selectedColor = statusColor)
+                                        Icon(
+                                            imageVector = statusIcon,
+                                            contentDescription = null,
+                                            tint = if (isSelected) statusColor else TextMuted,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = statusTitle,
+                                            style = Typography.bodyMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) PrimaryDark else TextDark
                                         )
                                     }
                                 }
@@ -684,7 +683,6 @@ fun SaludTabContent(viewModel: BabyViewModel) {
                                         fontWeight = if (vaccineDate.isNotBlank()) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
-
                                 if (vaccineDate.isNotBlank()) {
                                     IconButton(
                                         onClick = { vaccineDate = "" },
@@ -756,9 +754,9 @@ fun SaludTabContent(viewModel: BabyViewModel) {
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(CircleShape)
-                                            .background(MintPrimary.copy(alpha = 0.15f)),
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(MintPrimary.copy(alpha = 0.15f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
@@ -782,7 +780,6 @@ fun SaludTabContent(viewModel: BabyViewModel) {
                                         )
                                     }
                                 }
-
                                 Surface(
                                     color = MintPrimary,
                                     shape = RoundedCornerShape(8.dp)
@@ -847,13 +844,25 @@ fun SaludTabContent(viewModel: BabyViewModel) {
                                     shape = RoundedCornerShape(8.dp),
                                     border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                                 ) {
-                                    Text(
-                                        text = "Cambiar hora",
-                                        style = Typography.labelSmall,
-                                        color = PrimaryDark,
-                                        fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Schedule,
+                                            contentDescription = "Schedules",
+                                            tint = MintPrimary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "Cambiar hora",
+                                            style = Typography.labelSmall,
+                                            color = PrimaryDark,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -873,57 +882,55 @@ fun SaludTabContent(viewModel: BabyViewModel) {
                     }
                 }
             }
+        }
 
-            Button(
-                onClick = {
-                    when (selectedHealthSubTab) {
-                        "peso_altura" -> {
-                            val parsedWeight = inputWeight.replace(',', '.').toDoubleOrNull()
-                            val parsedHeight = inputHeight.replace(',', '.').toDoubleOrNull()
-                            if (parsedWeight != null) viewModel.addWeightRecord(parsedWeight)
-                            if (parsedHeight != null) viewModel.addHeightRecord(parsedHeight)
-                            Toast.makeText(context, "Medición registrada con éxito", Toast.LENGTH_SHORT).show()
-                        }
-                        "vacunas" -> {
-                            if (vaccineName.isNotBlank()) {
-                                viewModel.addVaccineRecord(
-                                    name = vaccineName,
-                                    notes = vaccineNotes,
-                                    dateString = vaccineDate.ifBlank { null },
-                                    status = vaccineStatus
-                                )
-                                Toast.makeText(context, "¡Vacuna registrada con éxito! 💉", Toast.LENGTH_SHORT).show()
-                                vaccineName = ""
-                                vaccineNotes = ""
-                                vaccineDate = ""
-                                vaccineStatus = "Vacunado completamente"
-                            }
-                        }
-                        "citas" -> {
-                            if (appointmentPediatra.isNotBlank() && appointmentDate.isNotBlank()) {
-                                viewModel.addAppointmentRecord(
-                                    pediatra = appointmentPediatra,
-                                    dateString = appointmentDate,
-                                    timeString = if (appointmentTime.isBlank()) "10:00" else appointmentTime,
-                                    hasReminder = hasReminder
-                                )
-                                Toast.makeText(context, "¡Cita médica guardada con recordatorio! 📅", Toast.LENGTH_SHORT).show()
-                                appointmentPediatra = ""
-                            }
+        Button(
+            onClick = {
+                when (selectedHealthSubTab) {
+                    "peso_altura" -> {
+                        val parsedWeight = inputWeight.replace(',', '.').toDoubleOrNull()
+                        val parsedHeight = inputHeight.replace(',', '.').toDoubleOrNull()
+                        if (parsedWeight != null) viewModel.addWeightRecord(parsedWeight)
+                        if (parsedHeight != null) viewModel.addHeightRecord(parsedHeight)
+                        Toast.makeText(context, "Medición registrada con éxito", Toast.LENGTH_SHORT).show()
+                    }
+                    "vacunas" -> {
+                        viewModel.addVaccineRecord(
+                            name = vaccineName,
+                            notes = vaccineNotes,
+                            dateString = vaccineDate.ifBlank { null },
+                            status = vaccineStatus
+                        )
+                        Toast.makeText(context, "¡Vacuna registrada con éxito! 💉", Toast.LENGTH_SHORT).show()
+                        vaccineName = ""
+                        vaccineNotes = ""
+                        vaccineDate = ""
+                        vaccineStatus = "Vacunado completamente"
+                    }
+                    "citas" -> {
+                        if (appointmentPediatra.isNotBlank() && appointmentDate.isNotBlank()) {
+                            viewModel.addAppointmentRecord(
+                                pediatra = appointmentPediatra,
+                                dateString = appointmentDate,
+                                timeString = if (appointmentTime.isBlank()) "10:00" else appointmentTime,
+                                hasReminder = hasReminder
+                            )
+                            Toast.makeText(context, "¡Cita médica guardada con recordatorio! 📅", Toast.LENGTH_SHORT).show()
+                            appointmentPediatra = ""
                         }
                     }
-                    viewModel.currentTab.value = "Home"
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MintPrimary, contentColor = Color.White),
-                shape = RoundedCornerShape(27.dp)
-            ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Guardar Registro", style = Typography.headlineSmall)
-            }
+                }
+                viewModel.currentTab.value = "Home"
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MintPrimary, contentColor = Color.White),
+            shape = RoundedCornerShape(27.dp)
+        ) {
+            Icon(Icons.Default.CheckCircle, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Guardar Registro", style = Typography.headlineSmall)
         }
     }
 }
@@ -1206,6 +1213,139 @@ fun QuickDiaperRegistrationDialog(
 }
 
 @Composable
+fun SleepManualRegistrationForm(
+    baby: BabyProfile,
+    activityDateStr: String,
+    onDateChange: (String) -> Unit,
+    startTime: String,
+    onStartTimeChange: (String) -> Unit,
+    endTime: String,
+    onEndTimeChange: (String) -> Unit,
+    notes: String,
+    onNotesChange: (String) -> Unit
+) {
+    val context = LocalContext.current
+    var localDate by remember { mutableStateOf(activityDateStr) }
+    var localStartTime by remember { mutableStateOf(startTime) }
+    var localEndTime by remember { mutableStateOf(endTime) }
+    var localNotes by remember { mutableStateOf(notes) }
+
+    val datePicker = remember {
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, month)
+                    set(Calendar.DAY_OF_MONTH, day)
+                }
+                localDate = sdf.format(cal.time)
+                onDateChange(localDate)
+            },
+            Calendar.getInstance().get(Calendar.YEAR),
+            Calendar.getInstance().get(Calendar.MONTH),
+            Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+        )
+    }
+
+    val startTimePicker = remember {
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+                val formatted = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
+                localStartTime = formatted
+                onStartTimeChange(formatted)
+            },
+            Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+            Calendar.getInstance().get(Calendar.MINUTE),
+            false
+        )
+    }
+
+    val endTimePicker = remember {
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+                val formatted = String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
+                localEndTime = formatted
+                onEndTimeChange(formatted)
+            },
+            Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+            Calendar.getInstance().get(Calendar.MINUTE),
+            false
+        )
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(CreamBg).clickable { datePicker.show() }.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MintPrimary, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Fecha del registro: ${if (localDate.isNotBlank()) localDate else "Hoy"}",
+                    style = Typography.bodyMedium,
+                    color = PrimaryDark,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Icon(Icons.Default.Edit, contentDescription = null, tint = TextMuted, modifier = Modifier.size(16.dp))
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(CreamBg).clickable { startTimePicker.show() }.padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Schedule, contentDescription = null, tint = MintPrimary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Inicio: $localStartTime",
+                        style = Typography.bodyMedium,
+                        color = PrimaryDark,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(CreamBg).clickable { endTimePicker.show() }.padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Schedule, contentDescription = null, tint = MintPrimary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Fin: $localEndTime",
+                        style = Typography.bodyMedium,
+                        color = PrimaryDark,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
+        PMOutlinedTextField(
+            value = localNotes,
+            onValueChange = { localNotes = it },
+            label = { Text("Notas adicionales") },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
 fun SleepManualRegistrationDialog(
     baby: BabyProfile,
     initialStartTime: String? = null,
@@ -1244,10 +1384,7 @@ fun SleepManualRegistrationDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Box(
                             modifier = Modifier
                                 .size(42.dp)

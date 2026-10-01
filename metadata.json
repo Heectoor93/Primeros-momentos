@@ -1,0 +1,6 @@
+{
+  "name": "Primeros Momentos",
+  "description": "Registra y realiza un seguimiento del crecimiento, desarrollo, actividades y salud de tu bebé.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

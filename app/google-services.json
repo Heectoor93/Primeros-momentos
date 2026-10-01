@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "304633661342",
+    "project_id": "primeros-momentos-b4e04",
+    "storage_bucket": "primeros-momentos-b4e04.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:304633661342:android:37c58bdf28f3c2a0d4788f",
+        "android_client_info": {
+          "package_name": "com.aistudio.primerosmomentos.gbyfzr"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "304633661342-jjf733j4qt583imt95hhqn8oftvg50h3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.primerosmomentos.gbyfzr",
+            "certificate_hash": "2b24dfb5822eec7d6e8fd447ed0a53010245509a"
+          }
+        },
+        {
+          "client_id": "304633661342-ogjakl217bruusk1kh1esp337e416bqs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAym58eeEJxUrzbMvQufc5VJe9dWfdI2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "304633661342-ogjakl217bruusk1kh1esp337e416bqs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

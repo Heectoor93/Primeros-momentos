@@ -1,0 +1,980 @@
+package com.example.ui
+
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardOptions.KeyboardType
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.layout.ContentScale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.border.BorderStroke
+import com.example.data.BabyProfile
+import com.example.ui.theme.*
+import java.text.SimpleDateFormat
+import java.util.*
+import com.example.R
+import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.drawscope.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainAppScreen(viewModel: BabyViewModel) {
+    val baby by viewModel.babyProfile.collectAsStateWithLifecycle()
+    val activs by viewModel.activities.collectAsStateWithLifecycle()
+    val healths by viewModel.healthRecords.collectAsStateWithLifecycle()
+    val allMoments by viewModel.moments.collectAsStateWithLifecycle()
+    val activeTab by viewModel.currentTab.collectAsStateWithLifecycle()
+    val googleAccount by viewModel.googleAccountEmail.collectAsStateWithLifecycle()
+
+    var showSplash by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2000)
+        showSplash = false
+    }
+
+    val isAuthLoading by viewModel.isAuthLoading.collectAsStateWithLifecycle()
+    val isRestoringFromCloud by viewModel.isRestoringFromCloud.collectAsStateWithLifecycle()
+
+    if (showSplash) {
+        SplashScreen()
+    } else if (isAuthLoading || isRestoringFromCloud) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(PremiumBackgroundBrush),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(24.dp)
+            ) {
+                CircularProgressIndicator(
+                    color = MintPrimary,
+                    trackColor = Color(0xFFF1F5F9),
+                    modifier = Modifier.size(56.dp)
+                )
+                Text(
+                    text = "Restaurando tu información...",
+                    style = Typography.titleMedium,
+                    color = PrimaryDark,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Recuperando datos y momentos guardados en tu cuenta.",
+                    style = Typography.bodySmall,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    } else if (googleAccount == null) {
+        GoogleSignInScreen(viewModel = viewModel)
+    } else if (baby == null) {
+        OnboardingScreen(onRegister = { name, dob, gender ->
+            viewModel.saveProfile(name, dob, gender)
+        })
+    } else {
+        val currentBaby = baby!!
+        Scaffold(
+            bottomBar = {
+                BottomNavigationBar(
+                    selectedTab = activeTab,
+                    onTabSelected = { tab -> viewModel.currentTab.value = tab }
+                )
+            },
+            containerColor = Color.Transparent,
+            modifier = Modifier.background(PremiumBackgroundBrush)
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                when (activeTab) {
+                    "Home" -> HomeScreen(
+                        baby = currentBaby,
+                        viewModel = viewModel,
+                        activities = activs,
+                        moments = allMoments
+                    )
+                    "Momentos" -> MomentsScreen(
+                        baby = currentBaby,
+                        viewModel = viewModel,
+                        moments = allMoments
+                    )
+                    "Registrar" -> RegisterScreen(
+                        baby = currentBaby,
+                        viewModel = viewModel,
+                        activities = activs,
+                        healthRecords = healths
+                    )
+                    "Seguimiento" -> TrackingScreen(
+                        baby = currentBaby,
+                        viewModel = viewModel,
+                        activities = activs,
+                        healthRecords = healths
+                    )
+                    "HealthHistory" -> HealthHistoryScreen(
+                        baby = currentBaby,
+                        viewModel = viewModel,
+                        healthRecords = healths
+                    )
+                    "Perfil" -> ProfileScreen(
+                        baby = currentBaby,
+                        viewModel = viewModel
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SplashScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(PremiumBackgroundBrush),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                color = MintPrimary.copy(alpha = 0.12f),
+                radius = 400f,
+                center = Offset(size.width * 0.1f, size.height * 0.2f)
+            )
+            drawCircle(
+                color = PeachWarm.copy(alpha = 0.12f),
+                radius = 350f,
+                center = Offset(size.width * 0.9f, size.height * 0.8f)
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(180.dp)
+                    .shadow(12.dp, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo_sinfondo),
+                    contentDescription = "Logo de la App",
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "Primeros Momentos",
+                style = Typography.headlineLarge,
+                color = PrimaryDark,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Acompañando cada paso en el crecimiento de tu bebé",
+                style = Typography.bodyLarge,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(64.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val infiniteTransition = rememberInfiniteTransition(label = "SplashLoading")
+                val alpha1 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f, targetValue = 1f,
+                    animationSpec = infiniteRepeatable(animation = tween(800), repeatMode = RepeatMode.Reverse),
+                    label = "Alpha1"
+                )
+                val alpha2 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f, targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(800),
+                        repeatMode = RepeatMode.Reverse,
+                        initialStartOffset = StartOffset(250)
+                    ),
+                    label = "Alpha2"
+                )
+                val alpha3 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f, targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(800),
+                        repeatMode = RepeatMode.Reverse,
+                        initialStartOffset = StartOffset(500)
+                    ),
+                    label = "Alpha3"
+                )
+
+                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(MintPrimary.copy(alpha = alpha1)))
+                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(MintPrimary.copy(alpha = alpha2)))
+                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(MintPrimary.copy(alpha = alpha3)))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GoogleSignInScreen(viewModel: BabyViewModel) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isSigningIn by remember { mutableStateOf(false) }
+    var showCustomAccountDialog by remember { mutableStateOf(false) }
+    var currentStepText by remember { mutableStateOf("Conectando con Google...") }
+
+    var customEmail by remember { mutableStateOf("") }
+    var customName by remember { mutableStateOf("") }
+
+    val isAuthLoading by viewModel.isAuthLoading.collectAsStateWithLifecycle()
+    val isCloudSyncing by viewModel.isSyncingCloud.collectAsStateWithLifecycle()
+
+    fun startNativeGoogleSignIn() {
+        viewModel.signInWithGoogleNative(context) { success, errorMsg ->
+            if (!success && errorMsg != null) {
+                android.widget.Toast.makeText(context, errorMsg, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun startRealGoogleAuth() {
+        startNativeGoogleSignIn()
+    }
+
+    fun startSimulatedGoogleAuth(email: String, name: String) {
+        val finalName = if (name.isBlank()) "Héctor" else name
+        val finalEmail = if (email.isBlank()) "heectoor93@gmail.com" else email
+
+        isSigningIn = true
+        currentStepText = "Solicitando permisos de Google Drive (Simulado)..."
+
+        scope.launch {
+            kotlinx.coroutines.delay(1000)
+            currentStepText = "Creando carpeta 'Primeros Momentos/' en tu Google Drive..."
+            kotlinx.coroutines.delay(1000)
+            currentStepText = "¡Copia de seguridad virtual lista! 🎉"
+            kotlinx.coroutines.delay(800)
+            viewModel.registerGoogleAccount(finalEmail, finalName)
+            isSigningIn = false
+            android.widget.Toast.makeText(context, "¡Google Drive simulado correctamente! ✨", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    if (showCustomAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showCustomAccountDialog = false },
+            containerColor = Color.White,
+            title = {
+                Text(
+                    text = "Vincular cuenta simulada",
+                    style = Typography.headlineMedium,
+                    color = PrimaryDark,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text(
+                        text = "Introduce los datos de la cuenta que deseas simular para las copias de seguridad de tus momentos.",
+                        style = Typography.bodyMedium,
+                        color = TextMuted
+                    )
+                    PMOutlinedTextField(
+                        value = customName,
+                        onValueChange = { customName = it },
+                        placeholder = { Text("Nombre") },
+                        modifier = Modifier.fillMaxWidth().testTag("google_custom_name"),
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = MintPrimary) }
+                    )
+                    PMOutlinedTextField(
+                        value = customEmail,
+                        onValueChange = { customEmail = it },
+                        placeholder = { Text("ejemplo@gmail.com") },
+                        modifier = Modifier.fillMaxWidth().testTag("google_custom_email"),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = MintPrimary) }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (customEmail.contains("@") && customEmail.contains(".")) {
+                            showCustomAccountDialog = false
+                            startSimulatedGoogleAuth(customEmail.trim(), customName.trim())
+                        } else {
+                            android.widget.Toast.makeText(context, "Por favor, introduce un correo electrónico de Google válido.", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
+                ) {
+                    Text("Vincular y Continuar", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomAccountDialog = false }) {
+                    Text("Cancelar", color = TextMuted)
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        containerColor = Color.Transparent,
+        modifier = Modifier.background(PremiumBackgroundBrush)
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(MintPrimary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("☁️", fontSize = 42.sp)
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = null,
+                            tint = PrimaryDark,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "Copia de Seguridad\ncon Google Drive",
+                    style = Typography.headlineLarge,
+                    color = PrimaryDark,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 36.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Para asegurar las fotos y vídeos de tus momentos especiales, 'Primeros Momentos' creará una carpeta segura en tu Google Drive.",
+                    style = Typography.bodyLarge,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .clickable { startRealGoogleAuth() }
+                        .shadow(3.dp, RoundedCornerShape(27.dp)),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    shape = RoundedCornerShape(27.dp),
+                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Canvas(modifier = Modifier.size(22.dp)) {
+                            val r = size.width / 2
+                            val cx = size.width / 2
+                            val cy = size.height / 2
+                            drawArc(
+                                color = Color(0xFFEA4335),
+                                startAngle = 180f,
+                                sweepAngle = 90f,
+                                useCenter = true
+                            )
+                            drawArc(
+                                color = Color(0xFFFBBC05),
+                                startAngle = 90f,
+                                sweepAngle = 90f,
+                                useCenter = true
+                            )
+                            drawArc(
+                                color = Color(0xFF34A853),
+                                startAngle = 0f,
+                                sweepAngle = 90f,
+                                useCenter = true
+                            )
+                            drawArc(
+                                color = Color(0xFF4285F4),
+                                startAngle = 270f,
+                                sweepAngle = 90f,
+                                useCenter = true
+                            )
+                            drawCircle(color = SurfaceWhite, radius = r * 0.6f, center = Offset(cx, cy))
+                            drawRect(
+                                color = Color(0xFF4285F4),
+                                topLeft = Offset(cx, cy - r * 0.15f),
+                                size = Size(r, r * 0.3f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Iniciar sesión con Google",
+                            style = Typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextDark
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextButton(
+                    onClick = { showCustomAccountDialog = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SwitchAccount,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MintPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Continuar sin Google Drive",
+                        style = Typography.bodyMedium,
+                        color = MintPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "🔒 Conexión segura provista por Google Identity Services. Tus datos e imágenes se sincronizan directamente con tu Drive y no se comparten con terceros.",
+                    style = Typography.labelSmall,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
+
+            val googleSyncState by viewModel.googleDriveSyncStatus.collectAsStateWithLifecycle()
+            if (isSigningIn) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.85f))
+                        .clickable(enabled = false) {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .shadow(8.dp, RoundedCornerShape(24.dp)),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "Vinculando cuenta de Google",
+                                style = Typography.headlineMedium,
+                                color = PrimaryDark,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+
+                            CircularProgressIndicator(
+                                color = MintPrimary,
+                                trackColor = Color(0xFFF1F5F9),
+                                modifier = Modifier.size(64.dp)
+                            )
+
+                            Text(
+                                text = googleSyncState,
+                                style = Typography.bodyMedium,
+                                color = TextDark,
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Text(
+                                text = "Creando carpeta segura 'Primeros Momentos/' en tu Drive para guardar fotos y vídeos...",
+                                style = Typography.labelSmall,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OnboardingScreen(onRegister: (String, Long, String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var dobTimestamp by remember { mutableStateOf<Long?>(null) }
+    var gender by remember { mutableStateOf("Niño") }
+    var dateString by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = android.app.DatePickerDialog(
+        context,
+        { _, year, monthOfYear, dayOfMonth ->
+            val chosenCal = Calendar.getInstance().apply {
+                set(Calendar.YEAR, year)
+                set(Calendar.MONTH, monthOfYear)
+                set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            }
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            dateString = sdf.format(chosenCal.time)
+            dobTimestamp = chosenCal.timeInMillis
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
+    Scaffold(
+        containerColor = Color.Transparent,
+        modifier = Modifier.background(PremiumBackgroundBrush)
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        StorkDrawing(
+                            modifier = Modifier
+                                .size(110.dp)
+                                .padding(bottom = 4.dp)
+                        )
+                        Text(
+                            text = "¡Hola, Papis!",
+                            style = Typography.headlineMedium,
+                            color = PrimaryDark
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Comencemos vuestra historia",
+                    style = Typography.headlineLarge,
+                    color = PrimaryDark,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Crea el perfil de tu pequeño para empezar a registrar sus primeros grandes momentos.",
+                    style = Typography.bodyLarge,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "¿Cómo se llama tu bebé?",
+                            style = Typography.labelLarge,
+                            color = TextDark
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        PMOutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            placeholder = { Text("Ej: Martina o Martín") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("baby_name_input"),
+                            shape = RoundedCornerShape(12.dp),
+                            leadingIcon = {
+                                Icon(Icons.Default.Face, contentDescription = null, tint = MintPrimary)
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Fecha de nacimiento",
+                            style = Typography.labelLarge,
+                            color = TextDark
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { datePickerDialog.show() }
+                        ) {
+                            PMOutlinedTextField(
+                                value = dateString,
+                                onValueChange = {},
+                                placeholder = { Text("Selecciona fecha") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("baby_dob_input"),
+                                shape = RoundedCornerShape(12.dp),
+                                leadingIcon = {
+                                    Icon(Icons.Default.CalendarToday, contentDescription = null, tint = MintPrimary)
+                                },
+                                enabled = false
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "¿Es niño o niña?",
+                            style = Typography.labelLarge,
+                            color = TextDark
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = { gender = "Niño" },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(54.dp)
+                                    .testTag("onboarding_boy_btn"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (gender == "Niño") MintPrimary else CreamBg,
+                                    contentColor = if (gender == "Niño") SurfaceWhite else TextDark
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, if (gender == "Niño") MintPrimary else MintPrimary.copy(alpha = 0.3f))
+                            ) {
+                                Icon(Icons.Default.Male, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Niño", style = Typography.labelLarge)
+                            }
+
+                            Button(
+                                onClick = { gender = "Niña" },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(54.dp)
+                                    .testTag("onboarding_girl_btn"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (gender == "Niña") MintPrimary else CreamBg,
+                                    contentColor = if (gender == "Niña") SurfaceWhite else TextDark
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, if (gender == "Niña") MintPrimary else MintPrimary.copy(alpha = 0.3f))
+                            ) {
+                                Icon(Icons.Default.Female, contentDescription = null)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Niña", style = Typography.labelLarge)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        val finalDob = dobTimestamp ?: System.currentTimeMillis()
+                        if (name.isNotBlank()) {
+                            onRegister(name, finalDob, gender)
+                        }
+                    },
+                    enabled = name.isNotBlank() && dateString.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .testTag("onboarding_submit_btn"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryDark,
+                        contentColor = SurfaceWhite
+                    ),
+                    shape = RoundedCornerShape(28.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
+                ) {
+                    Text("Siguiente", style = Typography.headlineSmall)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.ArrowForward, contentDescription = null)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Puedes cambiar estos datos en cualquier momento desde los ajustes de tu perfil.",
+                    style = Typography.labelSmall,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun StorkDrawing(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val scale = minOf(w, h) / 150f
+
+        val cx = w / 2f
+        val cy = h / 2f - 10f * scale
+
+        drawCircle(
+            color = Color(0x2A000000),
+            radius = 65f * scale,
+            center = Offset(cx, cy + 15f * scale)
+        )
+        drawCircle(
+            color = Color(0xFFD4EDDA),
+            radius = 60f * scale,
+            center = Offset(cx, cy + 10f * scale)
+        )
+        drawCircle(
+            color = Color(0xFFA2D7B4),
+            radius = 60f * scale,
+            center = Offset(cx, cy + 10f * scale),
+            style = Stroke(width = 3.5f * scale)
+        )
+
+        val legColor = Color(0xFFE67E22)
+        val legX = cx + 15f * scale
+        val legYStart = cy + 40f * scale
+        val legYEnd = cy + 85f * scale
+        drawLine(
+            color = legColor,
+            start = Offset(legX - 5f * scale, legYStart),
+            end = Offset(legX - 8f * scale, legYEnd),
+            strokeWidth = 3f * scale,
+            cap = StrokeCap.Round
+        )
+        val legPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(legX + 5f * scale, legYStart)
+            lineTo(legX + 8f * scale, cy + 65f * scale)
+            lineTo(legX + 2f * scale, legYEnd)
+        }
+        drawPath(
+            path = legPath,
+            color = legColor,
+            style = Stroke(width = 3f * scale, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        )
+
+        val bodyColor = Color.White
+        val outlineColor = Color(0xFFCFD8DC)
+        val bodyWidth = 70f * scale
+        val bodyHeight = 45f * scale
+        val bodyX = cx - 15f * scale
+        val bodyY = cy + 5f * scale
+        drawOval(
+            color = bodyColor,
+            topLeft = Offset(bodyX, bodyY),
+            size = Size(bodyWidth, bodyHeight)
+        )
+        drawOval(
+            color = outlineColor,
+            topLeft = Offset(bodyX, bodyY),
+            size = Size(bodyWidth, bodyHeight),
+            style = Stroke(width = 1.5f * scale)
+        )
+
+        val neckPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(cx + 40f * scale, cy + 15f * scale)
+            quadraticTo(
+                cx + 50f * scale, cy - 15f * scale,
+                cx + 35f * scale, cy - 45f * scale
+            )
+        }
+        drawPath(
+            path = neckPath,
+            color = outlineColor,
+            style = Stroke(width = 18f * scale, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        )
+        drawPath(
+            path = neckPath,
+            color = bodyColor,
+            style = Stroke(width = 15f * scale, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        )
+
+        val headX = cx + 32f * scale
+        val headY = cy - 50f * scale
+        val headRadius = 15f * scale
+        drawCircle(
+            color = outlineColor,
+            radius = headRadius + 1f * scale,
+            center = Offset(headX, headY)
+        )
+        drawCircle(
+            color = bodyColor,
+            radius = headRadius,
+            center = Offset(headX, headY)
+        )
+
+        val wingColor = Color(0xFF2C3E50)
+        val wingPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(bodyX + 25f * scale, bodyY + 5f * scale)
+            quadraticTo(
+                bodyX + 60f * scale, bodyY + 10f * scale,
+                bodyX + 75f * scale, bodyY + 30f * scale
+            )
+            quadraticTo(
+                bodyX + 45f * scale, bodyY + 45f * scale,
+                bodyX + 20f * scale, bodyY + 25f * scale
+            )
+            close()
+        }
+        drawPath(path = wingPath, color = wingColor)
+
+        drawCircle(
+            color = Color(0xFF2C3E50),
+            radius = 2f * scale,
+            center = Offset(headX - 4f * scale, headY - 3f * scale)
+        )
+
+        val bundleColor = Color(0xFFB2EBF2)
+        val bundleX = headX - 35f * scale
+        val bundleY = headY + 35f * scale
+        val bundleRadius = 14f * scale
+
+        val beakTipX = headX - 30f * scale
+        val beakTipY = headY + 5f * scale
+
+        val strapPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(beakTipX - 2f * scale, beakTipY + 2f * scale)
+            lineTo(bundleX, bundleY - bundleRadius + 2f * scale)
+            lineTo(beakTipX + 2f * scale, beakTipY + 2f * scale)
+            close()
+        }
+        drawPath(path = strapPath, color = bundleColor.copy(alpha = 0.9f))
+
+        drawCircle(
+            color = bundleColor,
+            radius = bundleRadius,
+            center = Offset(bundleX, bundleY)
+        )
+        drawCircle(
+            color = Color(0xFF80DEEA),
+            radius = 4f * scale,
+            center = Offset(beakTipX, beakTipY + 4f * scale)
+        )
+
+        val beakColor = Color(0xFFF39C12)
+        val beakPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(headX - 10f * scale, headY - 4f * scale)
+            lineTo(headX - 45f * scale, headY + 6f * scale)
+            lineTo(headX - 8f * scale, headY + 8f * scale)
+            close()
+        }
+        drawPath(path = beakPath, color = beakColor)
+    }
+}
